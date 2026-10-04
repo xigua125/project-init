@@ -3,7 +3,7 @@ name: project-initialization
 description: Prepare project architecture before implementation.
 version: "1.1.3"
 author: "wangdeli, Hermes Agent"
-license: "Private"
+license: "MIT"
 platforms: [windows, linux, macos]
 created_by: "agent"
 metadata:
