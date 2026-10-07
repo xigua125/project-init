@@ -1,7 +1,8 @@
 ---
 name: project-initialization
 description: Prepare project architecture before implementation.
-version: "1.1.3"
+version: "1.1.4"
+status: "candidate"
 author: "wangdeli, Hermes Agent"
 license: "MIT"
 platforms: [windows, linux, macos]
@@ -273,6 +274,37 @@ entries = [
 ```
 Record `materialized_registry_sha256` over Section 9 canonical bytes. For Clean Root: ACTUAL state must equal this registry exactly. For Dirty Root: retained PREEXISTING objects remain separate from approved materialized objects.
 
+**Control-Plane Artifact Placement (V1.1.4).** Canonical control-plane artifacts MUST NOT be materialized inside the audited project root. This removes self-registration, self-hash, and post-freeze write cycles.
+
+| Artifact | Canonical location | Builder write authority | Snapshot membership |
+|---|---|---|---|
+| Scope/Ignore specs | external pre-BUILD control plane | only before approval; immutable after authorization | OUTSIDE audited root |
+| Origin/Materialized Registries | external pre-BUILD control plane; Verification Workspace may hold working copies | only before approval; immutable from BUILD start | OUTSIDE audited root |
+| Freeze Manifest + hash | Verification Workspace outside audited root | Validator-generated after Snapshot B | OUTSIDE Snapshot A/B |
+| verification/audit evidence and evidence log | external Verification Workspace/evidence storage | role-scoped | OUTSIDE audited root |
+| independent anchors | independently controlled external anchor location | NO Builder write authority | OUTSIDE audited root and Verification Workspace |
+| project Stage 0 design documents | audited root only when intentionally part of project deliverable | Builder during authorized BUILD only | INSIDE when Scope includes them |
+
+- Canonical registries and Freeze Manifest MUST NOT register or hash themselves.
+- "Every in-scope object MUST have an entry" applies only to objects inside the resolved audited scope at the applicable scan time. External control-plane artifacts are not in-scope filesystem objects.
+- An in-root convenience copy of a canonical control-plane artifact is NON_AUTHORITATIVE and is forbidden unless the approved Scope/Ignore contract explicitly classifies it before BUILD. It MUST never be used as the canonical hash/anchor source.
+- PRE_FREEZE_SNAPSHOT_A and PRE_FREEZE_SNAPSHOT_B describe only the resolved audited root under anchored Scope/Ignore specs. Freeze Manifest is serialized FROM Snapshot B after Snapshot B exists; therefore it is not a member of Snapshot B.
+- After FREEZE, no status, hash, inventory, or audit result may be written back into the audited root. Post-freeze state belongs to external control-plane/evidence records. Any required in-root change invalidates Freeze and requires a new STOP WRITING / Snapshot A/B / Freeze sequence.
+
+**Anchor Role Separation (V1.1.4).** Anchor roles are distinct and MUST NOT substitute for one another:
+1. Pre-BUILD spec anchor — Human approval of Scope/Ignore and audited-root identity before BUILD.
+2. Registry approval anchor — approval of Origin/Materialized Registry hashes before BUILD; it MAY share one Human-controlled pre-BUILD anchor only when the schema explicitly includes both registry hashes and approval scope.
+3. Freeze hash anchor — records the established Freeze Manifest hash after Snapshot B/Freeze; it does NOT authorize BUILD and cannot repair missing pre-BUILD approval.
+4. Evidence-chain-head anchor — append-only head of the evidence chain after gate-producing appends/audit handoffs.
+
+All independent anchors MUST be outside Builder write authority. A Builder-created file cannot satisfy an independent-anchor requirement merely because its path is outside the audited root. Missing pre-BUILD Human authorization cannot be repaired retroactively; remediation requires a new lineage/authorization sequence.
+
+**Portable Authority, Custody, and Identity (V1.1.4 Contract V1.4).** `Builder write authority` is the logical Builder-role authority boundary and authorized write set, not an OS permission domain. Being outside that authority does not by itself require a separate OS user/SID/UID, ACL, mount namespace, filesystem owner, process token, or host. Directory separation alone and OS-account separation alone are each insufficient.
+
+Default PASS for Builder-write exclusion and independent custody requires: a recorded non-Builder producer/approver role; a recorded logical identity and agent-instance identifier distinct from the Builder agent instance; canonical immutable/hash-bound bytes and custody evidence; an authorizing anchor that predates the governed BUILD; an append-only hash chain plus matching before/after snapshots of protected locations; and Final-Auditor re-verification. A same-OS-identity execution may PASS when those portable guarantees pass. The same agent instance MUST NOT act as Builder and Validator/Independent Auditor/Final Auditor where separation is required. A Builder-authored external file and a post-BUILD authorization anchor remain invalid.
+
+Separate OS users/SIDs/UIDs, ACLs/tokens, read-only mounts, sandboxes, separate hosts, or equivalents are `OPTIONAL_PREFERRED_HIGH_ASSURANCE`. Record their verified presence as high assurance. Their absence alone does not block default PASS and MUST be recorded as `PORTABLE_DEFAULT` / non-high-assurance. Any protected-location before/after difference is a write/protection violation; append-only evidence tamper and chain-head failures retain their existing blocking semantics.
+
 **Builder STOP WRITING (V1.1.3).** The Builder MUST announce STOP WRITING before the Validator establishes Freeze. After STOP WRITING:
 - Builder writes NO further changes to the audited project scope.
 - Builder writes NO further changes to the Origin/Materialized Registries.
@@ -456,25 +488,27 @@ Do not make the user manually relay routine handoffs when orchestration can safe
 
 ### 13. Final Verification
 
-**Final Inventory Ordering (V1.1.2).** Final Verification MUST execute in this order:
-1. Generate Stage 0 Contracts
-2. Generate Verification Evidence
-3. Freeze / finalize the evidence set
-4. Perform the FINAL DISK SCAN (after all artifact generation has stopped)
-5. Build/update the AUTHORITATIVE_ARTIFACT_INVENTORY from the final scan
-6. Reconcile the Manifest against the FINAL disk state
-7. Reconcile referenced paths/artifacts
-8. Evaluate blocking gates
-9. Write the final machine-readable status
+**Final Inventory Ordering (V1.1.4; supersedes the V1.1.2 ordering where Freeze is established).** Final Verification uses two planes and MUST execute in this order:
+1. Generate all authorized in-root Stage 0 project/design artifacts.
+2. Complete Builder self-test and all permitted in-root reconciliation while writes are still authorized.
+3. Builder announces STOP WRITING.
+4. Validator performs PRE_FREEZE_SNAPSHOT_A.
+5. Generate candidate verification/control-plane evidence outside audited root only.
+6. Validator performs PRE_FREEZE_SNAPSHOT_B and requires exhaustive A/B equality.
+7. Serialize Snapshot B externally as Freeze Manifest and establish Freeze.
+8. Perform post-freeze real-root rescan; any drift invalidates Freeze.
+9. Reconcile referenced paths/artifacts and evaluate blocking gates using external evidence.
+10. Independent Review writes its report/status outside audited root.
+11. PM/Orchestrator records final machine-readable gate state outside audited root. No final-status write-back into the frozen project is permitted.
 
-It is FORBIDDEN to take an "final" file inventory, then keep generating evidence, and still declare PASS against the stale inventory. Any mid-run snapshot MUST be explicitly marked `SNAPSHOT_TYPE = INTERMEDIATE` and must never be presented as FINAL_DISK_INVENTORY.
+The frozen audited-root inventory is Snapshot B / Freeze Manifest. AUTHORITATIVE_ARTIFACT_INVENTORY may reference external evidence/control-plane artifacts by path, hash, producer, purpose, and status, but those external artifacts are not members of the frozen project inventory. Any in-root update required after step 7 invalidates the freeze and requires a new STOP WRITING sequence.
 
-**AUTHORITATIVE_ARTIFACT_INVENTORY (V1.1.2).** The Manifest's artifact inventory MUST cover ALL Stage 0 authoritative outputs, not only the Markdown contracts:
-- Stage 0 Contracts
-- Final Verification Evidence (every evidence artifact produced by the Final Verification)
-- Any other artifacts formally generated and retained by Stage 0
+**AUTHORITATIVE_ARTIFACT_INVENTORY (V1.1.4 clarification).** The authoritative inventory MUST cover ALL retained Stage 0 outputs across both planes:
+- audited-root Stage 0 project/design artifacts, bound by Snapshot B / Freeze Manifest;
+- Final Verification Evidence and audit/control-plane artifacts stored externally;
+- any other formally retained Stage 0 artifact.
 
-Every evidence artifact entry MUST record: path, artifact type, ownership (producer), purpose, and status — and be reconcilable against the actual disk. An evidence file that exists on disk but is missing from the inventory, or is inventoried but absent on disk, is a MANIFEST_CONSISTENCY failure.
+Each entry MUST record path, artifact type, plane (`AUDITED_ROOT` or `EXTERNAL_CONTROL_PLANE`), ownership/producer, purpose, status, and a checkable hash where applicable. The in-root PROJECT_INIT_MANIFEST may contain the pre-freeze project inventory, but after Freeze it MUST NOT be rewritten to add later evidence or final status. Post-freeze additions belong to the external authoritative inventory/status record. Missing, stale, or falsely located entries are MANIFEST_CONSISTENCY failures.
 
 Immediately before the Authorization Gate, execute ALL of:
 1. Actual filesystem reconciliation (Filesystem Reality Gate — Clean/Dirty model per EXISTING_STATE)
@@ -521,9 +555,9 @@ A compact project may combine sections into one Stage 0 document if every applic
 
 ## Authoritative Manifest
 
-PROJECT_INIT_MANIFEST is the single source of truth and MUST contain at least:
+PROJECT_INIT_MANIFEST is the authoritative pre-freeze project manifest. After Freeze, final review/gate state is authoritative only in the external control plane; the frozen in-root manifest MUST NOT be rewritten. Before Freeze, PROJECT_INIT_MANIFEST MUST contain at least:
 - project root
-- AUTHORITATIVE_ARTIFACT_INVENTORY — covering Stage 0 Contracts AND Final Verification Evidence AND every other formally retained Stage 0 artifact (each entry: path, artifact type, ownership/producer, purpose, status), reconcilable against the FINAL disk
+- pre-freeze AUDITED_ROOT artifact inventory covering every retained in-root Stage 0 artifact; external verification/audit evidence created later is registered in the external AUTHORITATIVE_ARTIFACT_INVENTORY and MUST NOT trigger in-root manifest rewrite
 - approved filesystem inventory (designed vs materialized), with top-level and nested paths counted separately (TOP_LEVEL_COUNT / NESTED_PATH_COUNT / TOTAL_DESIGNED_PATH_COUNT)
 - referenced-path classification coverage: every project path referenced by any Stage 0 contract appears as MATERIALIZED_PATH, DESIGNED_FUTURE_PATH, EXTERNAL_PATH, or PREEXISTING_CLASSIFIED_PATH (zero orphans, zero unknowns)
 - existing-state classification (or EMPTY_ROOT)
@@ -604,5 +638,7 @@ V1.1.0 Round A regression test (project `C:/Users/ASUS/erp-presales-demo-v110-cl
 V1.1.1 final regression (Clean Root `erp-presales-demo-v111-clean/` + Dirty Root `erp-presales-demo-v111-dirty/`, 2026-09-21, independent Codex audit) passed all functional rounds but the audit found 4 P1 defects in the skill text itself: (P1-1) Filesystem Reality Gate used unconditional Clean-Root equality semantics with no formal PREEXISTING_CLASSIFIED_PATH class or Dirty Reality model; (P1-2) the Manifest artifact inventory covered only Markdown contracts, omitting Final Verification evidence, with no final-inventory ordering or INTERMEDIATE snapshot semantics; (P1-3) agents produced ad-hoc status values (e.g. `FILESYSTEM_DESIGN = PROVISIONAL_PASS`) outside the defined enum; (P1-4) environment observations lacked provenance (no command/executable/output recorded), enabling unexplained version drift. All four test projects are immutable regression evidence. V1.1.2 patches: Clean/Dirty dual reality model + PREEXISTING_CLASSIFIED_PATH, AUTHORITATIVE_ARTIFACT_INVENTORY + Final Inventory Ordering + SNAPSHOT_TYPE, formal GATE_STATUS enum with PROVISIONAL as an orthogonal field, Environment Observation Provenance + Drift Rule.
 
 P2 backlog (recorded, non-blocking): P2-A — historical aggregate MD5 baselines should additionally record an ordered file list, hash composition algorithm, and baseline artifact for provenance; P2-B — recovery status should expose `CURRENT_RECOVERY_READINESS = READY | NO_BACKUP_YET | UNVERIFIED` (enum value already added to the status block in V1.1.2; full rollout is backlog).
+
+V1.1.4 Candidate regression requirement: RT-01..RT-38 are mandatory; RT-31..RT-37 cover control-plane placement, no-self-reference, anchor-role separation, independent-anchor authority, post-Freeze write barrier, pending-review state, and missing pre-BUILD approval non-retroactivity. RT-38 is the V1.1.4 integrated cross-case test and supplies `cross_case_runtime_test_pass`. V1.1.4 remains Candidate until independent audit and the required regression/production-validation gates pass. V1.1.3 historical evidence and failed project lineages remain immutable and are never retroactively upgraded.
 
 V1.1.3 targeted hardening (lineage V1.1.3-CCR001-L2, 2026-10-02) closes four P1 classes identified in Production Validation #01: (P1-1) Clarification evidence/default semantics not formally linked to user answer/delegation/decision/status; (P1-2) Evidence/path closure not deterministic (origin classification, UNVERIFIED blocking, unexpected artifact detection); (P1-3) Required environment provenance completeness; (P1-4) Remediation ticket structure. V1.1.3 patches: clarification classification algorithm (BLOCKING/DEFAULTABLE) + immutable clarification record schema, origin classification (PREEXISTING/MANAGED_GENERATED/EPHEMERAL_IGNORED), UNVERIFIED blocking propagation, remediation ticket schema. All four V1.1.2 test projects remain immutable regression evidence. RT-01..RT-24 unchanged; RT-25..RT-30 new. V1.1.2 remains Historical Baseline. Validation Cycle 01 was FAIL (historical immutable); remediation targets VAL-02 and VAL-03 only.

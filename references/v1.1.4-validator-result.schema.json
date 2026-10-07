@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "v1.1.4-validator-result.schema.json",
+  "title": "V1.1.4 Validator Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","artifact_class","procedure_version","result_id","candidate_version","candidate_lineage_id","branch_id","evaluation_profile","validation_cycle","started_at","completed_at","validator_identity","authority_bindings","root_scope_binding","input_artifacts","contract_gate_results","rt_results","findings","evaluation_summary","canonicalization_profile","result_sha256"],
+  "properties": {
+    "schema_version": {"const":"v1.1.4-validator-result/1.1"},
+    "artifact_class": {"const":"AUDIT_RESULT"},
+    "procedure_version": {"const":"v1.1.4-validator-procedure/1.1"},
+    "result_id": {"type":"string","minLength":1},
+    "candidate_version": {"const":"V1.1.4"},
+    "candidate_lineage_id": {"type":"string","minLength":1},
+    "branch_id": {"type":"string","minLength":1},
+    "evaluation_profile": {"enum":["REGRESSION_VALIDATION","FINAL_PASS_VALIDATION","PV_SCENARIO_VALIDATION"]},
+    "validation_cycle": {"type":"integer","minimum":0},
+    "started_at": {"$ref":"#/$defs/timestamp"},
+    "completed_at": {"$ref":"#/$defs/timestamp"},
+    "validator_identity": {"$ref":"#/$defs/validator_identity"},
+    "authority_bindings": {"$ref":"#/$defs/authority_bindings"},
+    "root_scope_binding": {"$ref":"#/$defs/root_scope_binding"},
+    "input_artifacts": {"type":"array","items":{"$ref":"#/$defs/input_artifact"}},
+    "contract_gate_results": {"type":"array","items":{"$ref":"#/$defs/gate_result"}},
+    "rt_results": {"$ref":"#/$defs/rt_results"},
+    "findings": {"type":"array","items":{"$ref":"#/$defs/finding"}},
+    "evaluation_summary": {"$ref":"#/$defs/evaluation_summary"},
+    "canonicalization_profile": {"$ref":"#/$defs/canonicalization_profile"},
+    "result_sha256": {"$ref":"#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "timestamp": {"type":"string","pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "gate_status": {"enum":["PASS","FAIL","BLOCKED","UNVERIFIED","N/A"]},
+    "rt_status": {"enum":["PASS","FAIL","BLOCKED","UNVERIFIED"]},
+    "error_code": {"enum":["FROZEN_STATE_CHANGED","BUILDER_WRITE_AFTER_STOP","FREEZE_MANIFEST_INVALID","SCOPE_SPEC_ANCHOR_INVALID","IGNORE_SPEC_ANCHOR_INVALID","SCOPE_SPEC_CHANGED","IGNORE_SPEC_CHANGED","ORIGIN_REGISTRY_ANCHOR_INVALID","MATERIALIZED_REGISTRY_ANCHOR_INVALID","ORIGIN_REGISTRY_CHANGED","MATERIALIZED_REGISTRY_CHANGED","FILESYSTEM_REALITY_GATE_FAIL","CLEAN_ROOT_MATERIALIZED_MISMATCH","REQUIRED_CLARIFICATION_UNRESOLVED","REQUIRED_ENVIRONMENT_UNRESOLVED","ENVIRONMENT_PROVENANCE_INCOMPLETE","ENVIRONMENT_DRIFT","MISSING_PATH","UNEXPECTED_ARTIFACT","UNKNOWN_REFERENCED_PATH","ORPHAN_REFERENCED_PATH","ILLEGAL_SCOPE_MUTATION","PATH_CASE_COLLISION","INVALID_PATH_ENCODING","SYMLINK_ESCAPE","SYMLINK_CYCLE","EMPTY_SCOPE_NOT_ALLOWED","IGNORE_COVERS_SCOPE","VERIFICATION_WORKSPACE_IN_SCOPE","VERIFICATION_SIDE_EFFECT","AUDITOR_WRITE_VIOLATION","AUDIT_ROOT_NOT_OBSERVED","V112_EXTERNAL_ANCHOR_INVALID","V112_BASELINE_CHANGED","V112_RT_nn_FAIL","APPROVAL_RECORD_INVALID","PROPOSAL_CHANGED","EXECUTION_CONTRACT_CHANGED","VALIDATOR_REGISTRY_INVALID","VALIDATOR_INTEGRITY_FAIL","EVIDENCE_TAMPERED","EVIDENCE_CHAIN_HEAD_INVALID","CONTROL_PLANE_PLACEMENT_INVALID","CONTROL_PLANE_SELF_REFERENCE","ANCHOR_ROLE_INVALID","PREBUILD_AUTHORIZATION_INVALID","POST_FREEZE_WRITE_BARRIER_FAIL","REQUIRED_REGRESSION_TEST_FAIL","CROSS_CASE_RUNTIME_TEST_FAIL","INDEPENDENT_AUDIT_RESULT_INVALID","FINAL_AUDIT_RESULT_INVALID","INDEPENDENT_AUDIT_BLOCKING","FINAL_AUDIT_BLOCKING","REMEDIATION_LIMIT_REACHED","VALIDATION_LIMIT_REACHED","PV_LIMIT_REACHED","RELEASE_CANDIDATE_INVALIDATED","FINAL_PASS_INPUT_INVALID"]},
+    "error_codes": {"type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/error_code"}},
+    "validator_identity": {
+      "type":"object","additionalProperties":false,
+      "required":["validator_id","validator_version","validator_sha256","validator_algorithm_id","validator_runtime_name","validator_runtime_version","validator_runtime_executable","validator_runtime_executable_sha256","validator_registry_sha256","validator_registry_anchor_sha256","approval_status","approval_scope","approved_by","approved_at","expiry_or_null","execution_security_identity","builder_security_identity","validator_logical_identity","builder_logical_identity","validator_agent_instance_id","builder_agent_instance_id","os_identity_relationship","identity_separation_verified"],
+      "properties":{"validator_id":{"type":"string","minLength":1},"validator_version":{"type":"string","minLength":1},"validator_sha256":{"$ref":"#/$defs/sha256"},"validator_algorithm_id":{"type":"string","minLength":1},"validator_runtime_name":{"type":"string","minLength":1},"validator_runtime_version":{"type":"string","minLength":1},"validator_runtime_executable":{"type":"string","minLength":1},"validator_runtime_executable_sha256":{"$ref":"#/$defs/sha256"},"validator_registry_sha256":{"$ref":"#/$defs/sha256"},"validator_registry_anchor_sha256":{"$ref":"#/$defs/sha256"},"approval_status":{"enum":["ACTIVE","REVOKED"]},"approval_scope":{"type":"string","minLength":1},"approved_by":{"type":"string","minLength":1},"approved_at":{"$ref":"#/$defs/timestamp"},"expiry_or_null":{"anyOf":[{"$ref":"#/$defs/timestamp"},{"type":"null"}]},"execution_security_identity":{"type":"string","minLength":1},"builder_security_identity":{"type":"string","minLength":1},"validator_logical_identity":{"type":"string","minLength":1},"builder_logical_identity":{"type":"string","minLength":1},"validator_agent_instance_id":{"type":"string","minLength":1},"builder_agent_instance_id":{"type":"string","minLength":1},"os_identity_relationship":{"enum":["SAME","DIFFERENT","UNKNOWN"]},"identity_separation_verified":{"type":"boolean"}}
+    },
+    "authority_bindings": {
+      "type":"object","additionalProperties":false,
+      "required":["implementation_baseline_manifest_sha256","implementation_baseline_anchor_sha256","validator_registry_sha256","validator_registry_anchor_sha256","validation_authorization_record_sha256","prebuild_authorization_anchor_sha256","evidence_chain_head_anchor_sha256","authority_custodian_identity","builder_write_authority_excluded","logical_authorized_write_set_sha256","portable_builder_write_exclusion_verified","append_only_chain_guard_verified","final_auditor_reverification_required"],
+      "properties":{"implementation_baseline_manifest_sha256":{"$ref":"#/$defs/sha256"},"implementation_baseline_anchor_sha256":{"$ref":"#/$defs/sha256"},"validator_registry_sha256":{"$ref":"#/$defs/sha256"},"validator_registry_anchor_sha256":{"$ref":"#/$defs/sha256"},"validation_authorization_record_sha256":{"$ref":"#/$defs/sha256"},"prebuild_authorization_anchor_sha256":{"$ref":"#/$defs/sha256"},"evidence_chain_head_anchor_sha256":{"$ref":"#/$defs/sha256"},"authority_custodian_identity":{"type":"string","minLength":1},"builder_write_authority_excluded":{"type":"boolean"},"logical_authorized_write_set_sha256":{"$ref":"#/$defs/sha256"},"portable_builder_write_exclusion_verified":{"type":"boolean"},"append_only_chain_guard_verified":{"type":"boolean"},"final_auditor_reverification_required":{"type":"boolean"}}
+    },
+    "root_scope_binding": {
+      "type":"object","additionalProperties":false,
+      "required":["audited_root_declared_absolute_path","audited_root_resolved_absolute_path","storage_identity_kind","storage_identity_value","storage_identity_evidence_sha256","storage_identity_fallback_reason","scope_root","scope_spec_sha256","ignore_spec_sha256","origin_registry_sha256","materialized_registry_sha256","freeze_manifest_sha256","freeze_hash_anchor_sha256","before_snapshot_sha256","after_snapshot_sha256","protected_location_before_sha256","protected_location_after_sha256","protected_locations_unchanged","root_unchanged_during_validation","verification_workspace_absolute_path","verification_workspace_in_scope","evidence_storage_absolute_path","independent_anchor_store_absolute_path","read_only_mechanism","assurance_profile","high_assurance_isolation","write_attempted"],
+      "properties":{"audited_root_declared_absolute_path":{"type":"string","minLength":1},"audited_root_resolved_absolute_path":{"type":"string","minLength":1},"storage_identity_kind":{"enum":["WINDOWS_VOLUME_FILE_ID","POSIX_DEVICE_INODE","CANONICAL_PATH_PLUS_GUARD"]},"storage_identity_value":{"type":"string","minLength":1},"storage_identity_evidence_sha256":{"$ref":"#/$defs/sha256"},"storage_identity_fallback_reason":{"type":["string","null"]},"scope_root":{"type":"string","minLength":1},"scope_spec_sha256":{"$ref":"#/$defs/sha256"},"ignore_spec_sha256":{"$ref":"#/$defs/sha256"},"origin_registry_sha256":{"$ref":"#/$defs/sha256"},"materialized_registry_sha256":{"$ref":"#/$defs/sha256"},"freeze_manifest_sha256":{"$ref":"#/$defs/sha256"},"freeze_hash_anchor_sha256":{"$ref":"#/$defs/sha256"},"before_snapshot_sha256":{"$ref":"#/$defs/sha256"},"after_snapshot_sha256":{"$ref":"#/$defs/sha256"},"protected_location_before_sha256":{"$ref":"#/$defs/sha256"},"protected_location_after_sha256":{"$ref":"#/$defs/sha256"},"protected_locations_unchanged":{"type":"boolean"},"root_unchanged_during_validation":{"type":"boolean"},"verification_workspace_absolute_path":{"type":"string","minLength":1},"verification_workspace_in_scope":{"type":"boolean"},"evidence_storage_absolute_path":{"type":"string","minLength":1},"independent_anchor_store_absolute_path":{"type":"string","minLength":1},"read_only_mechanism":{"enum":["OS_ENFORCED","SANDBOX_ENFORCED","BEFORE_AFTER_FULL_GUARD"]},"assurance_profile":{"enum":["PORTABLE_DEFAULT","HIGH_ASSURANCE"]},"high_assurance_isolation":{"type":"boolean"},"write_attempted":{"type":"boolean"}}
+    },
+    "input_artifact": {
+      "type":"object","additionalProperties":false,
+      "required":["artifact_id","artifact_role","resolved_path","plane","producer_role","candidate_lineage_id","branch_id","size","sha256","custody_record_sha256","immutable_input"],
+      "properties":{"artifact_id":{"type":"string","minLength":1},"artifact_role":{"type":"string","minLength":1},"resolved_path":{"type":"string","minLength":1},"plane":{"enum":["AUDITED_ROOT","EXTERNAL_CONTROL_PLANE","INDEPENDENT_ANCHOR"]},"producer_role":{"enum":["BUILDER","VALIDATOR","INDEPENDENT_AUDITOR","FINAL_AUDITOR","HUMAN_CUSTODIAN","PM_ORCHESTRATOR"]},"candidate_lineage_id":{"type":"string","minLength":1},"branch_id":{"type":["string","null"]},"size":{"type":"integer","minimum":0},"sha256":{"$ref":"#/$defs/sha256"},"custody_record_sha256":{"anyOf":[{"$ref":"#/$defs/sha256"},{"type":"null"}]},"immutable_input":{"type":"boolean"}}
+    },
+    "gate_result": {
+      "type":"object","additionalProperties":false,
+      "required":["gate_id","gate_status","expected_value","actual_value","error_codes","evidence_artifact_ids"],
+      "properties":{"gate_id":{"type":"string","minLength":1},"gate_status":{"$ref":"#/$defs/gate_status"},"expected_value":{"type":["boolean","integer","string","null"]},"actual_value":{"type":["boolean","integer","string","null"]},"error_codes":{"$ref":"#/$defs/error_codes"},"evidence_artifact_ids":{"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}}}
+    },
+    "rt_result": {
+      "type":"object","additionalProperties":false,
+      "required":["status","assertion_algorithm_id","source_artifact_ids","error_codes","builder_reported_status","builder_status_used_as_oracle"],
+      "properties":{"status":{"$ref":"#/$defs/rt_status"},"assertion_algorithm_id":{"type":"string","minLength":1},"source_artifact_ids":{"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}},"error_codes":{"$ref":"#/$defs/error_codes"},"builder_reported_status":{"anyOf":[{"$ref":"#/$defs/rt_status"},{"type":"null"}]},"builder_status_used_as_oracle":{"const":false}}
+    },
+    "rt_results": {
+      "type":"object","additionalProperties":false,
+      "required":["RT-01","RT-02","RT-03","RT-04","RT-05","RT-06","RT-07","RT-08","RT-09","RT-10","RT-11","RT-12","RT-13","RT-14","RT-15","RT-16","RT-17","RT-18","RT-19","RT-20","RT-21","RT-22","RT-23","RT-24","RT-25","RT-26","RT-27","RT-28","RT-29","RT-30","RT-31","RT-32","RT-33","RT-34","RT-35","RT-36","RT-37","RT-38"],
+      "properties":{"RT-01":{"$ref":"#/$defs/rt_result"},"RT-02":{"$ref":"#/$defs/rt_result"},"RT-03":{"$ref":"#/$defs/rt_result"},"RT-04":{"$ref":"#/$defs/rt_result"},"RT-05":{"$ref":"#/$defs/rt_result"},"RT-06":{"$ref":"#/$defs/rt_result"},"RT-07":{"$ref":"#/$defs/rt_result"},"RT-08":{"$ref":"#/$defs/rt_result"},"RT-09":{"$ref":"#/$defs/rt_result"},"RT-10":{"$ref":"#/$defs/rt_result"},"RT-11":{"$ref":"#/$defs/rt_result"},"RT-12":{"$ref":"#/$defs/rt_result"},"RT-13":{"$ref":"#/$defs/rt_result"},"RT-14":{"$ref":"#/$defs/rt_result"},"RT-15":{"$ref":"#/$defs/rt_result"},"RT-16":{"$ref":"#/$defs/rt_result"},"RT-17":{"$ref":"#/$defs/rt_result"},"RT-18":{"$ref":"#/$defs/rt_result"},"RT-19":{"$ref":"#/$defs/rt_result"},"RT-20":{"$ref":"#/$defs/rt_result"},"RT-21":{"$ref":"#/$defs/rt_result"},"RT-22":{"$ref":"#/$defs/rt_result"},"RT-23":{"$ref":"#/$defs/rt_result"},"RT-24":{"$ref":"#/$defs/rt_result"},"RT-25":{"$ref":"#/$defs/rt_result"},"RT-26":{"$ref":"#/$defs/rt_result"},"RT-27":{"$ref":"#/$defs/rt_result"},"RT-28":{"$ref":"#/$defs/rt_result"},"RT-29":{"$ref":"#/$defs/rt_result"},"RT-30":{"$ref":"#/$defs/rt_result"},"RT-31":{"$ref":"#/$defs/rt_result"},"RT-32":{"$ref":"#/$defs/rt_result"},"RT-33":{"$ref":"#/$defs/rt_result"},"RT-34":{"$ref":"#/$defs/rt_result"},"RT-35":{"$ref":"#/$defs/rt_result"},"RT-36":{"$ref":"#/$defs/rt_result"},"RT-37":{"$ref":"#/$defs/rt_result"},"RT-38":{"$ref":"#/$defs/rt_result"}}
+    },
+    "finding": {
+      "type":"object","additionalProperties":false,
+      "required":["finding_id","severity","finding_class","rule_reference","error_codes","expected","actual","affected_artifact_ids"],
+      "properties":{"finding_id":{"type":"string","minLength":1},"severity":{"enum":["BLOCKING","NON_BLOCKING"]},"finding_class":{"enum":["CONTRACT_VIOLATION","MISSING_PREREQUISITE","UNVERIFIED_INPUT","INTEGRITY_FAILURE","EXECUTION_FAILURE"]},"rule_reference":{"type":"string","minLength":1},"error_codes":{"$ref":"#/$defs/error_codes"},"expected":{"type":"string"},"actual":{"type":"string"},"affected_artifact_ids":{"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}}}
+    },
+    "evaluation_summary": {
+      "type":"object","additionalProperties":false,
+      "required":["validator_verdict","contract_state","all_required_regression_tests_pass","cross_case_runtime_test_pass","blocking_finding_count","unverified_gate_count","blocked_gate_count","failed_rt_count","not_passed_rt_count","error_codes"],
+      "properties":{"validator_verdict":{"enum":["PASS","FAIL","NOT_READY"]},"contract_state":{"enum":["PASS","FAIL","NOT_READY","ESCALATION_TO_HUMAN"]},"all_required_regression_tests_pass":{"type":"boolean"},"cross_case_runtime_test_pass":{"type":"boolean"},"blocking_finding_count":{"type":"integer","minimum":0},"unverified_gate_count":{"type":"integer","minimum":0},"blocked_gate_count":{"type":"integer","minimum":0},"failed_rt_count":{"type":"integer","minimum":0,"maximum":38},"not_passed_rt_count":{"type":"integer","minimum":0,"maximum":38},"error_codes":{"$ref":"#/$defs/error_codes"}}
+    },
+    "canonicalization_profile": {
+      "type":"object","additionalProperties":false,
+      "required":["algorithm","known_answer_vector_set","known_answer_vectors_pass","existing_lib_compatibility_pass"],
+      "properties":{"algorithm":{"const":"RFC8785_JCS_UTF8_PLUS_LF"},"known_answer_vector_set":{"const":"V114-JCS-KAT-1"},"known_answer_vectors_pass":{"type":"boolean"},"existing_lib_compatibility_pass":{"type":"boolean"}}
+    }
+  }
+}

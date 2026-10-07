@@ -2,7 +2,7 @@
 
 **Project Initialization Skill** — 在正式编码前完成需求澄清、项目初始化、证据留存、独立审核与开发授权。
 
-当前版本：**V1.1.3**
+当前版本：**V1.1.4 Stable**
 
 ## 它解决什么问题
 
@@ -31,15 +31,33 @@ AI 开发项目很容易出现“需求没问清楚就开始写”“自己做�
 ```text
 project-init/
 ├─ SKILL.md
-└─ references/
+├─ references/
    ├─ regression-test-plan-v1.1.0.md
    ├─ regression-test-plan-v1.1.1.md
    ├─ regression-test-plan-v1.1.2.md
    ├─ regression-test-plan-v1.1.3.md
+   ├─ regression-test-plan-v1.1.4.md
    ├─ rt-execution-spec-v1.1.3.md
+   ├─ rt-execution-spec-v1.1.4.md
    ├─ v1.1.3-change-proposal-r2.md
    ├─ v1.1.3-execution-contract-v1.1.md
-   └─ v1.1.3-execution-contract-v1.2.md
+   ├─ v1.1.3-execution-contract-v1.2.md
+   ├─ v1.1.4-change-proposal.md
+   ├─ v1.1.4-contract-change-request-portability.md
+   ├─ v1.1.4-execution-contract-v1.3.md
+   ├─ v1.1.4-execution-contract-v1.4.md
+   ├─ v1.1.4-validator-procedure-v1.0.md
+   ├─ v1.1.4-validator-procedure-v1.1.md
+   └─ v1.1.4-validator-result.schema.json
+└─ tools/
+   ├─ v1.1.4-regression/
+   │  ├─ README.md
+   │  ├─ harness.mjs
+   │  └─ lib.mjs
+   └─ v1.1.4-validator/
+      ├─ README.md
+      ├─ validator.mjs
+      └─ validator-self-test.mjs
 ```
 
 ## 使用
@@ -50,9 +68,13 @@ project-init/
 
 ## 当前状态
 
-V1.1.3 已包含 Clarification 分类、Origin Classification、Scope/Ignore Spec、Origin/Materialized Registry、Freeze、Evidence Hash Chain、独立审核与 Final Verification 等机制。
+V1.1.4 Stable inherits the V1.1.3 governance baseline and adds the V1.1.4 regression, authoritative validation, portability correction, independent review, production validation, and Human Stable approval required for this release.
 
-仓库中的历史 regression test plan 和 execution contract 用于记录版本演进与验证规则。
+V1.1.3 及更早版本的 regression test plan、execution contract 与相关文件作为历史版本演进和验证规则记录保留；V1.1.3 不代表当前 Candidate 的发布身份。
+
+## V1.1.4 portability correction
+
+The governing Stable contract is the unchanged `references/v1.1.4-execution-contract-v1.3.md` base plus `references/v1.1.4-execution-contract-v1.4.md`. The operational Validator procedure is V1.0 plus `references/v1.1.4-validator-procedure-v1.1.md`. `references/v1.1.4-contract-change-request-portability.md` records the scoped change; Independent Review and Human approval gates were completed before Stable release.
 
 ## License
 
